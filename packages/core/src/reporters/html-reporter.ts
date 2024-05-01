@@ -72,6 +72,22 @@ async function createReportHtml(report: schema.MutationTestResult): Promise<stri
  * Escapes the HTML tags inside strings in a JSON input by breaking them apart.
  */
 function escapeHtmlTags(json: string) {
-  const j = json.replace(/</g, '<"+"');
+  const cleanJson = cleanNewLines(json);
+  const j = cleanJson.replace(/</g, '<"+"');
   return j;
+}
+
+function cleanNewLines(json: string): string {
+  try {
+    const obj = JSON.parse(json);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    Object.values(obj.files).forEach((file: any) => {
+      file.mutants.forEach((mutant: any) => {
+        mutant.replacement = mutant.replacement.replace(/\n/g, '');
+      });
+    });
+    return JSON.stringify(obj);
+  } catch (e) {
+    return json;
+  }
 }
