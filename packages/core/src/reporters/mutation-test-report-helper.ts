@@ -120,6 +120,7 @@ export class MutationTestReportHelper {
 
   public async reportAll(results: MutantResult[]): Promise<void> {
     const report = await this.mutationTestReport(results);
+    fixLineBreaksAndIndentation(report);
     const metrics = calculateMutationTestMetrics(report);
     this.reporter.onMutationTestReportReady(report, metrics);
     if (this.options.incremental) {
@@ -333,4 +334,36 @@ function normalizeReportFileName(fileName: string | undefined) {
   }
   // File name is not required for test files. By default we accumulate tests under the '' key
   return '';
+}
+
+/**
+ * Fixes the line breaks and indentation of the replacement code.
+ * 1. Line breaks: To avoid a runtime error when displaying multi-line replacement code in the html report, '\n' had to be replaced by '\r\n' in the replacement code.
+ * 2. Indentation: To fit the rest of the code, the current indentation of the replacement code lines had to be doubled and increased by the indentation of the line before the replacement.
+ */
+function fixLineBreaksAndIndentation(report: schema.MutationTestResult): void {
+  Object.values(report.files).forEach((file: any) => {
+    // iterate over all files
+    const fileAsArrayOfLines: string[] = file.source.split('\r\n');
+    file.mutants.forEach((mutant: any) => {
+      // iterate over all mutants
+      if (mutant.replacement.includes('\n')) {
+        const startLine = mutant.location.start.line;
+        const baseIndent = determineLeadingNumberOfWhitespaces(fileAsArrayOfLines[startLine - 1]);
+        const replacementAsArrayOfLines: string[] = mutant.replacement.split('\n');
+        for (let index = 1; index < replacementAsArrayOfLines.length; index++) {
+          //iterate over all lines of the replacement and insert the correct line break and indentation
+          const extraIndent = determineLeadingNumberOfWhitespaces(replacementAsArrayOfLines[index]);
+          replacementAsArrayOfLines[index] = '\r\n' + ' '.repeat(baseIndent + extraIndent) + replacementAsArrayOfLines[index];
+        }
+        mutant.replacement = replacementAsArrayOfLines.join('');
+      }
+    });
+  });
+}
+
+function determineLeadingNumberOfWhitespaces(str: string): number {
+  const regex = /^\s*/;
+  const result = regex.exec(str);
+  return result ? result[0].length : 0;
 }
