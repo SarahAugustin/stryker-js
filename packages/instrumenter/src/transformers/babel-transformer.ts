@@ -90,6 +90,10 @@ export const transformBabel: AstTransformer<ScriptFormat> = (
     if (placementPath) {
       const { appliedMutants } = placementMap.get(placementPath.node)!;
       mutantsToPlace.forEach((mutant) => appliedMutants.set(mutant, mutant.applied(placementPath.node)));
+    } else if (path.isProgram()) {
+      placementMap.set(root, { appliedMutants: new Map(), placer: mutantPlacers[0] });
+      const { appliedMutants } = placementMap.get(root)!;
+      mutantsToPlace.forEach((mutant) => appliedMutants.set(mutant, mutant.applied(root)));
     } else {
       throw new Error(`Mutants cannot be placed. This shouldn't happen! Unplaced mutants: ${JSON.stringify(mutantsToPlace, null, 2)}`);
     }
