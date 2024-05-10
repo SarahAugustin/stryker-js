@@ -15,6 +15,12 @@ import { updateOperatorMutator } from './update-operator-mutator.js';
 import { regexMutator } from './regex-mutator.js';
 import { optionalChainingMutator } from './optional-chaining-mutator.js';
 import { assignmentOperatorMutator } from './assignment-operator-mutator.js';
+import { newInputValidationMutator } from './new-input-validation-mutator.js';
+import { newComparisonOperatorMutator } from './new-comparison-operator-mutator.js';
+import { newErrorHandlingMutator } from './new-error-handling-mutator.js';
+import { newSubscribeCallMutator } from './new-subscribe-call-mutator.js';
+import { newRxjsOperatorMutator } from './new-rxjs-operator-mutator.js';
+import { newInputDefaultValueMutator } from './new-input-default-value-mutator.js';
 
 export const allMutators: NodeMutator[] = [
   arithmeticOperatorMutator,
@@ -33,4 +39,10 @@ export const allMutators: NodeMutator[] = [
   regexMutator,
   optionalChainingMutator,
   assignmentOperatorMutator,
+  newInputValidationMutator,
+  newComparisonOperatorMutator,
+  newErrorHandlingMutator,
+  newSubscribeCallMutator,
+  newRxjsOperatorMutator,
+  newInputDefaultValueMutator,
 ];
