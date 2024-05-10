@@ -1,7 +1,7 @@
 import babel from '@babel/core';
 
 import { NodeMutator } from './node-mutator.js';
-import { isAFormControlOrFormGroupOrFormArray, isAFormBuilder, isAFormControlDefinedByAFormBuilder } from './../util/form-input-helper.js';
+import { isIthArgumentOfObjectRelatedToForms } from './../util/form-input-helper.js';
 
 const { types } = babel;
 
@@ -9,41 +9,38 @@ export const newInputDefaultValueMutator: NodeMutator = {
   name: 'NewInputDefaultValue',
 
   *mutate(path) {
-    if (
-      isAFormControlOrFormGroupOrFormArray(path, ['FormControl', 'UntypedFormControl']) ||
-      isAFormBuilder(path, ['control']) ||
-      isAFormControlDefinedByAFormBuilder(path)
-    ) {
-      const replacement = types.cloneNode(path.node);
-      const valueOrFormControlState = types.isArrayExpression(replacement) ? replacement.elements[0] : replacement.arguments[0];
-      if (valueOrFormControlState && !types.isObjectExpression(valueOrFormControlState)) {
-        // mutate default value if it is set directly
-        if (mutateDefaultValue(valueOrFormControlState)) yield replacement;
-      } else if (types.isObjectExpression(valueOrFormControlState)) {
-        // mutate default value if it is set within a FormControlState
-        const objectProperty = valueOrFormControlState.properties.find(
-          (property): property is babel.types.ObjectProperty =>
-            types.isObjectProperty(property) && types.isIdentifier(property.key) && property.key.name === 'value',
-        );
-        if (objectProperty && mutateDefaultValue(objectProperty.value)) yield replacement;
+    if (path.isStringLiteral() && isDefaultValue(path)) {
+      const replacement = types.cloneDeepWithoutLoc(path.node);
+      if (replacement.value === '') {
+        replacement.value = 'mutated string';
+      } else {
+        replacement.value = '';
       }
+      yield replacement;
+    } else if (path.isNumericLiteral() && isDefaultValue(path)) {
+      const replacement = types.cloneDeepWithoutLoc(path.node);
+      replacement.value++;
+      yield replacement;
+    } else if (path.isBooleanLiteral() && isDefaultValue(path)) {
+      const replacement = types.cloneDeepWithoutLoc(path.node);
+      replacement.value = !replacement.value;
+      yield replacement;
     }
   },
 };
 
-function mutateDefaultValue(node: babel.types.Node): boolean {
-  if (types.isStringLiteral(node)) {
-    if (node.value === '') {
-      node.value = 'mutated string';
-    } else {
-      node.value = '';
-    }
-    return true;
-  } else if (types.isNumericLiteral(node)) {
-    node.value++;
-    return true;
-  } else if (types.isBooleanLiteral(node)) {
-    node.value = !node.value;
-    return true;
-  } else return false;
+function isDefaultValue(path: babel.NodePath) {
+  return isIthArgumentOfObjectRelatedToForms(path, 0, true) || isDefaultValueSetInAControlStateObject(path);
+}
+
+function isDefaultValueSetInAControlStateObject(path: babel.NodePath): boolean {
+  return (
+    !!path.parentPath &&
+    path.parentPath.isObjectProperty() &&
+    path.parentPath.node.value === path.node &&
+    types.isIdentifier(path.parentPath.node.key) &&
+    path.parentPath.node.key.name === 'value' &&
+    path.parentPath.parentPath.isObjectExpression() &&
+    isIthArgumentOfObjectRelatedToForms(path.parentPath.parentPath, 0, true)
+  );
 }

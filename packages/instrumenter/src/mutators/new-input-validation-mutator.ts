@@ -1,7 +1,7 @@
 import babel from '@babel/core';
 
 import { NodeMutator } from './node-mutator.js';
-import { isAFormControlOrFormGroupOrFormArray, isAFormBuilder, isAFormControlDefinedByAFormBuilder } from './../util/form-input-helper.js';
+import { isObjectRelatedToForms, isIthArgumentOfObjectRelatedToForms } from './../util/form-input-helper.js';
 
 const { types } = babel;
 
@@ -23,44 +23,32 @@ export const newInputValidationMutator: NodeMutator = {
   name: 'NewInputValidation',
 
   *mutate(path) {
-    
-
-
-
-    if (isAFormControlOrFormGroupOrFormArray(path) || isAFormBuilder(path) || isAFormControlDefinedByAFormBuilder(path)) {
+    if (isObjectRelatedToForms(path)) {
       const replacement = types.cloneNode(path.node);
-      const argumentsToBeMutated = types.isArrayExpression(replacement) ? replacement.elements : replacement.arguments;
-      let isChanged = false;
+      const array = types.isArrayExpression(replacement) ? replacement.elements : replacement.arguments;
 
-      // if a third argument exists, remove it. If it was neither an empty array nor an empty object, set isChanged to true, because a proper change was made.
-      if (argumentsToBeMutated.length === 3) {
-        if (!isNullOrUndefinedOrEmptyArray(argumentsToBeMutated[2])) isChanged = true;
-        argumentsToBeMutated.pop();
+      // delete third argument if it exists and if it is not null, undefined or an empty array
+      if (array.length === 3 && !isNullOrUndefinedOrEmptyArray(array[2])) {
+        array.pop();
+        yield replacement;
       }
 
-      // if a second argument exists and it is an Object with at least one property being a validator or an asyncValidator, delete those validators
-      if (
-        argumentsToBeMutated.length === 2 &&
-        types.isObjectExpression(argumentsToBeMutated[1]) &&
-        argumentsToBeMutated[1].properties.some((property) => isAValidatorOrAsyncValidator(property))
-      ) {
-        argumentsToBeMutated[1].properties = argumentsToBeMutated[1].properties.filter((property) => !isAValidatorOrAsyncValidator(property));
-        if (argumentsToBeMutated[1].properties.length === 0) argumentsToBeMutated.pop();
-        isChanged = true;
+      // handle second argument if it exists and if it is not null, undefined, an empty array or an object
+      if (array.length >= 2 && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
+        array.length === 3 ? (array[1] = types.arrayExpression()) : array.pop();
+        yield replacement;
       }
+    }
 
-      // if a second argument exists and it is netiher an object nor an empty array, null or undefined, remove it
-      else if (
-        argumentsToBeMutated.length === 2 &&
-        !types.isObjectExpression(argumentsToBeMutated[1]) &&
-        !isNullOrUndefinedOrEmptyArray(argumentsToBeMutated[1])
-      ) {
-        argumentsToBeMutated.pop();
-        isChanged = true;
-      }
-
-      // if a change was made return the mutated node
-      if (isChanged) yield replacement;
+    // if a second argument exists and it is an Object with at least one property being a validator or an asyncValidator, delete those validators
+    if (
+      isIthArgumentOfObjectRelatedToForms(path, 1) &&
+      path.isObjectExpression() &&
+      path.node.properties.some((property) => isAValidatorOrAsyncValidator(property))
+    ) {
+      const replacement = types.cloneNode(path.node);
+      replacement.properties = path.node.properties.filter((property) => !isAValidatorOrAsyncValidator(property));
+      yield replacement;
     }
   },
 };
