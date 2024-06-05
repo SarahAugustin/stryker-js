@@ -34,7 +34,6 @@ export class Mutant implements Mutable {
       fileName.endsWith('.ts') || fileName.endsWith('.tsx')
         ? {
             decoratorsBeforeExport: true,
-            sourceMaps: false,
           }
         : {};
     this.replacementCode = generator(this.replacement, formatOptions).code;
