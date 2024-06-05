@@ -51,7 +51,7 @@ function isAFormBuilder(
 // Check if this is a FormControl defined by a FormBuilder, UntypedFormBuilder or NonNullableFormBuilder
 function isAFormControlDefinedByAFormBuilder(path: babel.NodePath): path is babel.NodePath<babel.types.ArrayExpression> {
   return (
-    // FormControl defined by the group of record method
+    // FormControl defined by the group or record method
     (!!path.parentPath?.parentPath?.parentPath &&
       types.isArrayExpression(path.node) &&
       types.isObjectProperty(path.parentPath.node) &&
