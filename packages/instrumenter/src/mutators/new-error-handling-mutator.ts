@@ -8,34 +8,40 @@ export const newErrorHandlingMutator: NodeMutator = {
   name: 'NewErrorHandling',
 
   *mutate(path) {
+    // Delete the error handling of a try-catch-block
     if (path.isTryStatement()) {
-      // Delete the error handling of a try-catch-block
       yield types.cloneDeepWithoutLoc(path.node.block);
-    } else if (
+    }
+
+    // Delete the error handling of a Promise
+    else if (
       path.isCallExpression() &&
       types.isMemberExpression(path.node.callee) &&
       types.isIdentifier(path.node.callee.property) &&
       path.node.callee.property.name === 'catch'
     ) {
-      // Delete the error handling of a Promise
       yield types.cloneDeepWithoutLoc(path.node.callee.object);
-    } else if (
+    }
+
+    // Delete the error handling within a pipe of an RxJS observable
+    else if (
       path.isCallExpression() &&
       types.isMemberExpression(path.node.callee) &&
       types.isIdentifier(path.node.callee.property) &&
       path.node.callee.property.name === 'pipe' &&
       path.node.arguments.some((argument) => isCallExpressionACatchError(argument))
     ) {
-      // Delete the error handling within a pipe of an RxJS observable
       const replacement = types.cloneDeepWithoutLoc(path.node);
       replacement.arguments = replacement.arguments.filter((argument) => !isCallExpressionACatchError(argument));
       yield replacement;
-    } else if (
+    }
+
+    // Delete the error handling within the subscribe block of an RxJS observable
+    else if (
       path.isObjectExpression() &&
       path.node.properties.some((objectProperty) => isObjectPropertyAnError(objectProperty)) &&
       isCallExpressionASubscribeCall(path.parentPath)
     ) {
-      // Delete the error handling within the subscribe block of an RxJS observable
       const replacement = types.cloneDeepWithoutLoc(path.node);
       replacement.properties = replacement.properties.filter((objectProperty) => !isObjectPropertyAnError(objectProperty));
       yield replacement;
