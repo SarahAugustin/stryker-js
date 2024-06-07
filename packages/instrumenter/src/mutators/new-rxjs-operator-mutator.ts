@@ -24,32 +24,77 @@ const operators: Record<string, string> = {
   withLatestFrom: 'startWith',
 } as const;
 
+function isRxJSOperator(operator: string): operator is keyof typeof operators {
+  return Object.keys(operators).includes(operator);
+}
+
+function isRxJSOperatorInPipe(path: babel.NodePath): path is babel.NodePath<babel.types.Identifier> {
+  return (
+    types.isIdentifier(path.node) &&
+    isRxJSOperator(path.node.name) &&
+    path.parentPath !== null &&
+    path.parentPath.isCallExpression() &&
+    path.parentPath.parentPath.isCallExpression() &&
+    types.isMemberExpression(path.parentPath.parentPath.node.callee) &&
+    types.isIdentifier(path.parentPath.parentPath.node.callee.property) &&
+    path.parentPath.parentPath.node.callee.property.name === 'pipe'
+  );
+}
+
 export const newRxjsOperatorMutator: NodeMutator = {
   name: 'NewRxjsOperator',
 
   *mutate(path) {
-    if (types.isProgram(path.node)) {
+    // Handle the case that the new operator is already imported (then the mutation does not need to be at the level of the Program node)
+    if (isRxJSOperatorInPipe(path)) {
+      const oldOperator = path.node.name;
+      const newOperator = operators[oldOperator];
+      let programPath: babel.NodePath = path;
+      while (!programPath.isProgram() && programPath.parentPath) {
+        programPath = programPath.parentPath;
+      }
+      if (programPath.isProgram() && getAllImportedRxJSOperators(programPath).includes(newOperator)) {
+        yield types.identifier(newOperator);
+      }
+    }
+
+    // Handle the case that the new operator is not yet imported (then both the import and the usage of the operator have to be mutated)
+    else if (path.isProgram()) {
+      const allRxJSOperatorsImported = getAllImportedRxJSOperators(path);
       const importDeclarations = path.node.body.filter((element): element is babel.types.ImportDeclaration => types.isImportDeclaration(element));
+      // iterate over all import declarations
       for (const importDeclaration of importDeclarations) {
         const importSpecifiers = importDeclaration.specifiers.filter(
           (importSpecifier): importSpecifier is babel.types.ImportSpecifier =>
             types.isImportSpecifier(importSpecifier) && types.isIdentifier(importSpecifier.imported) && isRxJSOperator(importSpecifier.imported.name),
         );
+        // iterate over all RxJS operators that were imported
         for (const importSpecifier of importSpecifiers) {
           const oldOperator = types.isIdentifier(importSpecifier.imported) ? importSpecifier.imported.name : '';
           const newOperator = operators[oldOperator];
-          const operatorLocations: babel.NodePath[] = new Array<babel.NodePath>();
-          traverse(path.node, {
-            Identifier(currentpath) {
-              if (currentpath.isIdentifier() && currentpath.node.name === oldOperator && !currentpath.parentPath.isImportSpecifier()) {
-                operatorLocations.push(currentpath);
-              }
-            },
-          });
-          for (const operatorLocation of operatorLocations) {
-            const importWasMutated = applyMutation(newOperator, operatorLocation, importDeclaration);
-            yield types.cloneDeepWithoutLoc(path.node);
-            removeMutation(oldOperator, operatorLocation, importWasMutated, importDeclaration);
+          // continue only if the newOperator is not imported yet because otherwise no import at the level of the Program node would be necessary
+          if (!allRxJSOperatorsImported.includes(newOperator)) {
+            const operatorLocations: babel.NodePath[] = new Array<babel.NodePath>();
+            traverse(path.node, {
+              Identifier(currentpath) {
+                if (currentpath.isIdentifier() && currentpath.node.name === oldOperator && !currentpath.parentPath.isImportSpecifier()) {
+                  operatorLocations.push(currentpath);
+                }
+              },
+            });
+            // mutate import statement
+            importDeclaration.specifiers.push(types.importSpecifier(types.identifier(newOperator), types.identifier(newOperator)));
+            // iterate over all locations at which the RxJS operator is used
+            for (const operatorLocation of operatorLocations) {
+              // mutate operator in the code
+              operatorLocation.replaceWith(types.identifier(newOperator));
+              // return mutated node
+              yield path.node;
+              // undo mutation of the operator in the code
+              operatorLocation.replaceWith(types.identifier(oldOperator));
+            }
+            // undo mutation of the import statement
+            importDeclaration.specifiers.pop();
           }
         }
       }
@@ -57,33 +102,15 @@ export const newRxjsOperatorMutator: NodeMutator = {
   },
 };
 
-function isRxJSOperator(operator: string): operator is keyof typeof operators {
-  return Object.keys(operators).includes(operator);
-}
-
-function applyMutation(newOperator: string, operatorLocation: babel.NodePath, importDeclarationNode: babel.types.ImportDeclaration): boolean {
-  // mutate operator in the code
-  operatorLocation.replaceWith(types.identifier(newOperator));
-  // mutate import statement if it does not include the new operator yet
-  const importNeedsToBeMutated = !importDeclarationNode.specifiers.some(
-    (specifier) => types.isImportSpecifier(specifier) && types.isIdentifier(specifier.imported) && specifier.imported.name === newOperator,
-  );
-  if (importNeedsToBeMutated) {
-    importDeclarationNode.specifiers.push(types.importSpecifier(types.identifier(newOperator), types.identifier(newOperator)));
+function getAllImportedRxJSOperators(path: babel.NodePath<babel.types.Program>): string[] {
+  const allRxJSOperators: string[] = [];
+  const importDeclarations = path.node.body.filter((element): element is babel.types.ImportDeclaration => types.isImportDeclaration(element));
+  for (const importDeclaration of importDeclarations) {
+    for (const importSpecifier of importDeclaration.specifiers) {
+      if (types.isImportSpecifier(importSpecifier) && types.isIdentifier(importSpecifier.imported) && isRxJSOperator(importSpecifier.imported.name)) {
+        allRxJSOperators.push(importSpecifier.imported.name);
+      }
+    }
   }
-  return importNeedsToBeMutated;
-}
-
-function removeMutation(
-  oldOperator: string,
-  operatorLocation: babel.NodePath,
-  importWasMutated: boolean,
-  importDeclarationNode: babel.types.ImportDeclaration,
-) {
-  // undo mutation of the operator in the code
-  operatorLocation.replaceWith(types.identifier(oldOperator));
-  // undo mutation of the import statement if one was performed
-  if (importWasMutated) {
-    importDeclarationNode.specifiers.pop();
-  }
+  return allRxJSOperators;
 }
