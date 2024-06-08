@@ -49,17 +49,17 @@ export const newRxjsOperatorMutator: NodeMutator = {
     else if (path.isProgram()) {
       const allRxJSOperatorsImported = getAllImportedRxJSOperators(path);
       const importDeclarations = path.node.body.filter((element): element is babel.types.ImportDeclaration => types.isImportDeclaration(element));
-      // iterate over all import declarations
+      // Iterate over all import declarations
       for (const importDeclaration of importDeclarations) {
         const importSpecifiers = importDeclaration.specifiers.filter(
           (importSpecifier): importSpecifier is babel.types.ImportSpecifier =>
             types.isImportSpecifier(importSpecifier) && types.isIdentifier(importSpecifier.imported) && isRxJSOperator(importSpecifier.imported.name),
         );
-        // iterate over all RxJS operators that were imported
+        // Iterate over all RxJS operators that were imported
         for (const importSpecifier of importSpecifiers) {
           const oldOperator = types.isIdentifier(importSpecifier.imported) ? importSpecifier.imported.name : '';
           const newOperator = operators[oldOperator];
-          // continue only if the newOperator is not imported yet because otherwise no import at the level of the Program node would be necessary
+          // Continue only if the newOperator is not imported yet because otherwise no import at the level of the Program node would be necessary
           if (!allRxJSOperatorsImported.includes(newOperator)) {
             const operatorLocations: babel.NodePath[] = new Array<babel.NodePath>();
             traverse(path.node, {
@@ -69,18 +69,13 @@ export const newRxjsOperatorMutator: NodeMutator = {
                 }
               },
             });
-            // mutate import statement
+            // Mutate the import statement and the locations at which the RxJS operator is used
             importDeclaration.specifiers.push(types.importSpecifier(types.identifier(newOperator), types.identifier(newOperator)));
-            // iterate over all locations at which the RxJS operator is used
             for (const operatorLocation of operatorLocations) {
-              // mutate operator in the code
               operatorLocation.replaceWith(types.identifier(newOperator));
-              // return mutated node
               yield path.node;
-              // undo mutation of the operator in the code
               operatorLocation.replaceWith(types.identifier(oldOperator));
             }
-            // undo mutation of the import statement
             importDeclaration.specifiers.pop();
           }
         }

@@ -12,14 +12,14 @@ export const newInputValidationMutator: NodeMutator = {
     if (isObjectRelatedToForms(path)) {
       const array = types.isArrayExpression(path.node) ? path.node.elements : path.node.arguments;
 
-      // delete third argument if it exists and if it is not null, undefined or an empty array
+      // Delete third argument if it exists and if it is not null, undefined or an empty array
       if (array.length === 3 && !isNullOrUndefinedOrEmptyArray(array[2])) {
         const replacement = types.cloneNode(path.node);
         types.isArrayExpression(replacement) ? replacement.elements.pop() : replacement.arguments.pop();
         yield replacement;
       }
 
-      // delete second argument if exacly two arguments exist, if it is not null, undefined, an empty array, or an object
+      // Delete second argument if exacly two arguments exist, if it is not null, undefined, an empty array, or an object
       if (array.length === 2 && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
         const replacement = types.cloneNode(path.node);
         types.isArrayExpression(replacement) ? replacement.elements.pop() : replacement.arguments.pop();
@@ -27,7 +27,7 @@ export const newInputValidationMutator: NodeMutator = {
       }
     }
 
-    // replace the second argument with an empty array if exacly three arguments exist and if the second one is not null, undefined, an empty array, or an object
+    // Replace the second argument with an empty array if exacly three arguments exist and if the second one is not null, undefined, an empty array, or an object
     if (
       isIthArgumentOfObjectRelatedToForms(path, 1) &&
       !path.isObjectExpression() &&
@@ -39,7 +39,7 @@ export const newInputValidationMutator: NodeMutator = {
       if (array.length === 3) yield types.arrayExpression();
     }
 
-    // if a second argument exists and it is an Object, iterate over its properties and delete them if they are a validator or asyncValidator
+    // If a second argument exists and it is an Object, iterate over its properties and delete them if they are a validator or asyncValidator
     if (isIthArgumentOfObjectRelatedToForms(path, 1) && path.isObjectExpression()) {
       for (const [index, property] of path.node.properties.entries()) {
         if (isAValidatorOrAsyncValidator(property)) {
