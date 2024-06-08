@@ -19,6 +19,7 @@ export const newComparisonOperatorMutator: NodeMutator = {
   name: 'NewComparisonOperator',
 
   *mutate(path) {
+    // Replace the operator if it is one of the comparison operators listed above
     if (path.isBinaryExpression() && isComparisonOperator(path.node.operator)) {
       const replacement = types.cloneNode(path.node, true);
       replacement.operator = operators[path.node.operator];

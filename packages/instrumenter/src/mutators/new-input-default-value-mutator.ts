@@ -11,17 +11,26 @@ export const newInputDefaultValueMutator: NodeMutator = {
   *mutate(path) {
     if (path.isStringLiteral() && isDefaultValue(path)) {
       const replacement = types.cloneDeepWithoutLoc(path.node);
+      // if the default value is an empty string, replace it with 'mutated string'
       if (replacement.value === '') {
         replacement.value = 'mutated string';
-      } else {
+      }
+      // if the default value is a non-empty string, replace it with an empty string
+      else {
         replacement.value = '';
       }
       yield replacement;
-    } else if (path.isNumericLiteral() && isDefaultValue(path)) {
+    }
+
+    // if the default value is a number, increase it by one
+    else if (path.isNumericLiteral() && isDefaultValue(path)) {
       const replacement = types.cloneDeepWithoutLoc(path.node);
       replacement.value++;
       yield replacement;
-    } else if (path.isBooleanLiteral() && isDefaultValue(path)) {
+    }
+
+    // if the default value is a boolean, invert it
+    else if (path.isBooleanLiteral() && isDefaultValue(path)) {
       const replacement = types.cloneDeepWithoutLoc(path.node);
       replacement.value = !replacement.value;
       yield replacement;
