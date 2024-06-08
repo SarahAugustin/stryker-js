@@ -343,18 +343,18 @@ function normalizeReportFileName(fileName: string | undefined) {
  */
 function fixErrorAndIndentation(report: schema.MutationTestResult): void {
   Object.values(report.files).forEach((file: any) => {
-    // iterate over all files
+    // Iterate over all files
     const fileAsArrayOfLines: string[] = file.source.split('\r\n');
     file.mutants.forEach((mutant: any) => {
-      // iterate over all mutants
+      // Iterate over all mutants
       if (mutant.replacement.includes('\n')) {
         const startLine = mutant.location.start.line;
         const baseIndent = determineLeadingNumberOfWhitespaces(fileAsArrayOfLines[startLine - 1]);
         const replacementAsArrayOfLines: string[] = mutant.replacement.split('\n');
-        // avoid the runtime error by inserting two white spaces at the end of the first line
+        // Avoid the runtime error by inserting two white spaces at the end of the first line
         replacementAsArrayOfLines[0] = replacementAsArrayOfLines[0] + '  ';
         for (let index = 1; index < replacementAsArrayOfLines.length; index++) {
-          //iterate over all lines of the replacement and insert the correct indentation
+          // Iterate over all lines of the replacement and insert the correct indentation
           const extraIndent = determineLeadingNumberOfWhitespaces(replacementAsArrayOfLines[index]);
           replacementAsArrayOfLines[index] = '\n' + ' '.repeat(baseIndent + extraIndent) + replacementAsArrayOfLines[index];
         }
@@ -364,6 +364,7 @@ function fixErrorAndIndentation(report: schema.MutationTestResult): void {
   });
 }
 
+// Determine the number of leading whitespaces in the provided string
 function determineLeadingNumberOfWhitespaces(str: string): number {
   const regex = /^\s*/;
   const result = regex.exec(str);
