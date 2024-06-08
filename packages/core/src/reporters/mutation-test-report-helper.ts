@@ -364,7 +364,7 @@ function fixErrorAndIndentation(report: schema.MutationTestResult): void {
   });
 }
 
-// Determine the number of leading whitespaces in the provided string
+// Determines the number of leading whitespaces in the provided string
 function determineLeadingNumberOfWhitespaces(str: string): number {
   const regex = /^\s*/;
   const result = regex.exec(str);
