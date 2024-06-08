@@ -5,20 +5,6 @@ import { isObjectRelatedToForms, isIthArgumentOfObjectRelatedToForms } from './.
 
 const { types } = babel;
 
-function isAValidatorOrAsyncValidator(
-  property: babel.types.ObjectMethod | babel.types.ObjectProperty | babel.types.SpreadElement,
-): property is babel.types.ObjectProperty {
-  return types.isObjectProperty(property) && types.isIdentifier(property.key) && ['validators', 'asyncValidators'].includes(property.key.name);
-}
-
-function isNullOrUndefinedOrEmptyArray(node: babel.types.Node | null): boolean {
-  return (
-    types.isNullLiteral(node) ||
-    (types.isIdentifier(node) && node.name === 'undefined') ||
-    (types.isArrayExpression(node) && node.elements.length === 0)
-  );
-}
-
 export const newInputValidationMutator: NodeMutator = {
   name: 'NewInputValidation',
 
@@ -65,3 +51,17 @@ export const newInputValidationMutator: NodeMutator = {
     }
   },
 };
+
+function isAValidatorOrAsyncValidator(
+  property: babel.types.ObjectMethod | babel.types.ObjectProperty | babel.types.SpreadElement,
+): property is babel.types.ObjectProperty {
+  return types.isObjectProperty(property) && types.isIdentifier(property.key) && ['validators', 'asyncValidators'].includes(property.key.name);
+}
+
+function isNullOrUndefinedOrEmptyArray(node: babel.types.Node | null): boolean {
+  return (
+    types.isNullLiteral(node) ||
+    (types.isIdentifier(node) && node.name === 'undefined') ||
+    (types.isArrayExpression(node) && node.elements.length === 0)
+  );
+}

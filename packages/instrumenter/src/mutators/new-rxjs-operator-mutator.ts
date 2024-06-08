@@ -28,19 +28,6 @@ function isRxJSOperator(operator: string): operator is keyof typeof operators {
   return Object.keys(operators).includes(operator);
 }
 
-function isRxJSOperatorInPipe(path: babel.NodePath): path is babel.NodePath<babel.types.Identifier> {
-  return (
-    types.isIdentifier(path.node) &&
-    isRxJSOperator(path.node.name) &&
-    path.parentPath !== null &&
-    path.parentPath.isCallExpression() &&
-    path.parentPath.parentPath.isCallExpression() &&
-    types.isMemberExpression(path.parentPath.parentPath.node.callee) &&
-    types.isIdentifier(path.parentPath.parentPath.node.callee.property) &&
-    path.parentPath.parentPath.node.callee.property.name === 'pipe'
-  );
-}
-
 export const newRxjsOperatorMutator: NodeMutator = {
   name: 'NewRxjsOperator',
 
@@ -113,4 +100,17 @@ function getAllImportedRxJSOperators(path: babel.NodePath<babel.types.Program>):
     }
   }
   return allRxJSOperators;
+}
+
+function isRxJSOperatorInPipe(path: babel.NodePath): path is babel.NodePath<babel.types.Identifier> {
+  return (
+    types.isIdentifier(path.node) &&
+    isRxJSOperator(path.node.name) &&
+    path.parentPath !== null &&
+    path.parentPath.isCallExpression() &&
+    path.parentPath.parentPath.isCallExpression() &&
+    types.isMemberExpression(path.parentPath.parentPath.node.callee) &&
+    types.isIdentifier(path.parentPath.parentPath.node.callee.property) &&
+    path.parentPath.parentPath.node.callee.property.name === 'pipe'
+  );
 }
