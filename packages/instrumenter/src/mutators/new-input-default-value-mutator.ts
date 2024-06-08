@@ -9,13 +9,14 @@ export const newInputDefaultValueMutator: NodeMutator = {
   name: 'NewInputDefaultValue',
 
   *mutate(path) {
+    // If the default value is a string, replace it depending on whether it is empty
     if (path.isStringLiteral() && isDefaultValue(path)) {
       const replacement = types.cloneDeepWithoutLoc(path.node);
-      // If the default value is an empty string, replace it with 'mutated string'
+      // If it is an empty string, replace it with 'mutated string'
       if (replacement.value === '') {
         replacement.value = 'mutated string';
       }
-      // If the default value is a non-empty string, replace it with an empty string
+      // If it is a non-empty string, replace it with an empty string
       else {
         replacement.value = '';
       }
@@ -38,10 +39,12 @@ export const newInputDefaultValueMutator: NodeMutator = {
   },
 };
 
+// Check whether the path points to a default value of a form field
 function isDefaultValue(path: babel.NodePath) {
   return isIthArgumentOfObjectRelatedToForms(path, 0, true) || isDefaultValueSetInAControlStateObject(path);
 }
 
+// Check whether the path points to a default value set within a FormControlState object
 function isDefaultValueSetInAControlStateObject(path: babel.NodePath): boolean {
   return (
     !!path.parentPath &&

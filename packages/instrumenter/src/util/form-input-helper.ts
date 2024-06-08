@@ -3,9 +3,9 @@ import babel from '@babel/core';
 const { types } = babel;
 
 /** Check if this is a
- * FormControl, UntypedFormControl, FormGroup, UntypedFormGroup, FormRecord, FormArray, UntypedFormArray,
- * FormBuilder, UntypedFormBuilder, NonNullableFormBuilder,
- * FormControl defined by a FormBuilder, UntypedFormBuilder, or NonNullableFormBuilder
+ * 1. constructor of an (Untyped)FormControl, (Untyped)FormGroup, FormRecord, or (Untyped)FormArray
+ * 2. control(), group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
+ * 3. FormControl defined by the group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
  */
 export function isObjectRelatedToForms(
   path: babel.NodePath,
@@ -20,6 +20,11 @@ export function isObjectRelatedToForms(
   } else return isAFormControlOrFormGroupOrFormRecordOrFormArray(path) || isAFormBuilder(path) || isAFormControlDefinedByAFormBuilder(path);
 }
 
+/** Check if this is the ith argument of a
+ * 1. constructor of an (Untyped)FormControl, (Untyped)FormGroup, FormRecord, or (Untyped)FormArray
+ * 2. control(), group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
+ * 3. FormControl defined by the group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
+ */
 export function isIthArgumentOfObjectRelatedToForms(path: babel.NodePath, index: number, onlyObjectsCreatingFormControls = false): boolean {
   if (path.parentPath && isObjectRelatedToForms(path.parentPath, onlyObjectsCreatingFormControls)) {
     const array = types.isArrayExpression(path.parentPath.node) ? path.parentPath.node.elements : path.parentPath.node.arguments;
@@ -27,7 +32,7 @@ export function isIthArgumentOfObjectRelatedToForms(path: babel.NodePath, index:
   } else return false;
 }
 
-// Check if this is a FormControl, UntypedFormControl, FormGroup, UntypedFormGroup, FormRecord, FormArray, or UntypedFormArray
+// Check if this is a constructor of an (Untyped)FormControl, (Untyped)FormGroup, FormRecord, or (Untyped)FormArray
 function isAFormControlOrFormGroupOrFormRecordOrFormArray(
   path: babel.NodePath,
   methods: string[] = ['FormControl', 'UntypedFormControl', 'FormGroup', 'UntypedFormGroup', 'FormRecord', 'FormArray', 'UntypedFormArray'],
@@ -35,7 +40,7 @@ function isAFormControlOrFormGroupOrFormRecordOrFormArray(
   return path.isNewExpression() && types.isIdentifier(path.node.callee) && methods.includes(path.node.callee.name);
 }
 
-// Check if this is a FormBuilder, UntypedFormBuilder or NonNullableFormBuilder
+// Check if this is a control(), group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
 function isAFormBuilder(
   path: babel.NodePath,
   methods: string[] = ['group', 'record', 'array', 'control'],
@@ -48,7 +53,7 @@ function isAFormBuilder(
   );
 }
 
-// Check if this is a FormControl defined by a FormBuilder, UntypedFormBuilder or NonNullableFormBuilder
+// Check if this is a FormControl defined by the group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
 function isAFormControlDefinedByAFormBuilder(path: babel.NodePath): path is babel.NodePath<babel.types.ArrayExpression> {
   return (
     // FormControl defined by the group or record method

@@ -24,6 +24,7 @@ const operators: Record<string, string> = {
   withLatestFrom: 'startWith',
 } as const;
 
+// Check whether the operator is one of the RsJS operators listed above
 function isRxJSOperator(operator: string): operator is keyof typeof operators {
   return Object.keys(operators).includes(operator);
 }
@@ -32,7 +33,7 @@ export const newRxjsOperatorMutator: NodeMutator = {
   name: 'NewRxjsOperator',
 
   *mutate(path) {
-    // Handle the case that the new operator is already imported (then the mutation does not need to be at the level of the Program node)
+    // Handle the case that the new operator is already imported
     if (isRxJSOperatorInPipe(path)) {
       const oldOperator = path.node.name;
       const newOperator = operators[oldOperator];
@@ -59,7 +60,7 @@ export const newRxjsOperatorMutator: NodeMutator = {
         for (const importSpecifier of importSpecifiers) {
           const oldOperator = types.isIdentifier(importSpecifier.imported) ? importSpecifier.imported.name : '';
           const newOperator = operators[oldOperator];
-          // Continue only if the newOperator is not imported yet because otherwise no import at the level of the Program node would be necessary
+          // Continue only if the newOperator is not imported yet because otherwise the other case above already handles this operator
           if (!allRxJSOperatorsImported.includes(newOperator)) {
             const operatorLocations: babel.NodePath[] = new Array<babel.NodePath>();
             traverse(path.node, {
@@ -84,6 +85,7 @@ export const newRxjsOperatorMutator: NodeMutator = {
   },
 };
 
+// Create an array containing all RxJS operators imported into the program
 function getAllImportedRxJSOperators(path: babel.NodePath<babel.types.Program>): string[] {
   const allRxJSOperators: string[] = [];
   const importDeclarations = path.node.body.filter((element): element is babel.types.ImportDeclaration => types.isImportDeclaration(element));
@@ -97,6 +99,7 @@ function getAllImportedRxJSOperators(path: babel.NodePath<babel.types.Program>):
   return allRxJSOperators;
 }
 
+// Check whether the path points to an RxJS operator located within a pipe function
 function isRxJSOperatorInPipe(path: babel.NodePath): path is babel.NodePath<babel.types.Identifier> {
   return (
     types.isIdentifier(path.node) &&
