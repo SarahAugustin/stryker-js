@@ -73,7 +73,10 @@ function isAFormControlOrFormGroupOrFormRecordOrFormArray(
 }
 
 // Check if this is a control(), group(), record(), or array() method of an (Untyped/NonNullable)FormBuilder
-function isAFormBuilder(node: babel.types.Node, methods: string[] = ['group', 'record', 'array', 'control']): node is babel.types.CallExpression {
+function isAFormBuilder(
+  node: babel.types.Node | undefined,
+  methods: string[] = ['group', 'record', 'array', 'control'],
+): node is babel.types.CallExpression {
   return (
     types.isCallExpression(node) &&
     types.isMemberExpression(node.callee) &&
@@ -86,15 +89,13 @@ function isAFormBuilder(node: babel.types.Node, methods: string[] = ['group', 'r
 function isAFormControlDefinedByAFormBuilder(path: babel.NodePath): boolean {
   return (
     // FormControl defined by the group or record method
-    (!!path.parentPath?.parentPath?.parentPath &&
-      types.isObjectProperty(path.parentPath.node) &&
-      types.isObjectExpression(path.parentPath.parentPath.node) &&
-      isAFormBuilder(path.parentPath.parentPath.parentPath.node, ['group', 'record']) &&
+    (types.isObjectProperty(path.parentPath?.node) &&
+      types.isObjectExpression(path.parentPath.parentPath?.node) &&
+      isAFormBuilder(path.parentPath.parentPath.parentPath?.node, ['group', 'record']) &&
       path.parentPath.parentPath.parentPath.node.arguments[0] === path.parentPath.parentPath.node) ||
     // FormControl defined by the array method
-    (!!path.parentPath?.parentPath &&
-      types.isArrayExpression(path.parentPath.node) &&
-      isAFormBuilder(path.parentPath.parentPath.node, ['array']) &&
+    (types.isArrayExpression(path.parentPath?.node) &&
+      isAFormBuilder(path.parentPath.parentPath?.node, ['array']) &&
       path.parentPath.parentPath.node.arguments[0] === path.parentPath.node)
   );
 }
