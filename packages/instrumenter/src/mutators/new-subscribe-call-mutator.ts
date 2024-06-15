@@ -10,7 +10,7 @@ export const newSubscribeCallMutator: NodeMutator = {
   *mutate(path) {
     // Delete the subscribe call of an Observable
     if (
-      path.isCallExpression() &&
+      types.isCallExpression(path.node) &&
       types.isMemberExpression(path.node.callee) &&
       types.isIdentifier(path.node.callee.property) &&
       path.node.callee.property.name === 'subscribe'

@@ -104,9 +104,8 @@ function isRxJSOperatorInPipe(path: babel.NodePath): path is babel.NodePath<babe
   return (
     types.isIdentifier(path.node) &&
     isRxJSOperator(path.node.name) &&
-    path.parentPath !== null &&
-    path.parentPath.isCallExpression() &&
-    path.parentPath.parentPath.isCallExpression() &&
+    types.isCallExpression(path.parentPath?.node) &&
+    types.isCallExpression(path.parentPath.parentPath?.node) &&
     types.isMemberExpression(path.parentPath.parentPath.node.callee) &&
     types.isIdentifier(path.parentPath.parentPath.node.callee.property) &&
     path.parentPath.parentPath.node.callee.property.name === 'pipe'

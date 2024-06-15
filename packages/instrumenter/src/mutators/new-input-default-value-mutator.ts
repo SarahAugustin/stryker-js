@@ -47,12 +47,11 @@ function isDefaultValue(path: babel.NodePath) {
 // Check whether the path points to a default value set within a FormControlState object
 function isDefaultValueSetInAControlStateObject(path: babel.NodePath): boolean {
   return (
-    !!path.parentPath &&
-    path.parentPath.isObjectProperty() &&
+    types.isObjectProperty(path.parentPath?.node) &&
     path.parentPath.node.value === path.node &&
     types.isIdentifier(path.parentPath.node.key) &&
     path.parentPath.node.key.name === 'value' &&
-    path.parentPath.parentPath.isObjectExpression() &&
+    types.isObjectExpression(path.parentPath.parentPath?.node) &&
     isIthArgumentOfObjectRelatedToForms(path.parentPath.parentPath, 0, true)
   );
 }

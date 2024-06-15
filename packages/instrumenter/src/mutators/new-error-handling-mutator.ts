@@ -15,7 +15,7 @@ export const newErrorHandlingMutator: NodeMutator = {
 
     // Delete the error handling of a Promise
     else if (
-      path.isCallExpression() &&
+      types.isCallExpression(path.node) &&
       types.isMemberExpression(path.node.callee) &&
       types.isIdentifier(path.node.callee.property) &&
       path.node.callee.property.name === 'catch'
@@ -25,7 +25,7 @@ export const newErrorHandlingMutator: NodeMutator = {
 
     // Delete the error handling within a pipe of an RxJS Observable
     else if (
-      path.isCallExpression() &&
+      types.isCallExpression(path.node) &&
       types.isMemberExpression(path.node.callee) &&
       types.isIdentifier(path.node.callee.property) &&
       path.node.callee.property.name === 'pipe' &&
@@ -64,7 +64,7 @@ function isCallExpressionACatchError(
 // Check whether the CallExpression is a subscribe call
 function isCallExpressionASubscribeCall(path: babel.NodePath): boolean {
   return (
-    path.isCallExpression() &&
+    types.isCallExpression(path.node) &&
     types.isMemberExpression(path.node.callee) &&
     types.isIdentifier(path.node.callee.property) &&
     path.node.callee.property.name === 'subscribe'

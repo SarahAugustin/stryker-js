@@ -17,12 +17,12 @@ export const newInputValidationMutator: NodeMutator = {
       const array = getArrayOfArgumentsOfObjectRelatedToForms(path);
 
       // Delete the third argument if it exists and if it is not null, undefined, or an empty array
-      if (array && array.length === 3 && types.isNode(array[2]) && !isNullOrUndefinedOrEmptyArray(array[2])) {
+      if (array?.length === 3 && types.isNode(array[2]) && !isNullOrUndefinedOrEmptyArray(array[2])) {
         yield createReplacementWithLastArrayElementMissing(path.node);
       }
 
       // Delete the second argument if exactly two arguments exist in total and if it is not null, undefined, an empty array, or an object
-      if (array && array.length === 2 && types.isNode(array[1]) && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
+      if (array?.length === 2 && types.isNode(array[1]) && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
         yield createReplacementWithLastArrayElementMissing(path.node);
       }
     }
@@ -36,7 +36,7 @@ export const newInputValidationMutator: NodeMutator = {
       isObjectRelatedToForms(path.parentPath)
     ) {
       const array = getArrayOfArgumentsOfObjectRelatedToForms(path.parentPath);
-      if (array && array.length === 3) yield types.arrayExpression();
+      if (array?.length === 3) yield types.arrayExpression();
     }
 
     // If a second argument exists and it is an object, iterate over its properties and delete them if they are a validator or asyncValidator
