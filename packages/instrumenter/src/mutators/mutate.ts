@@ -21,6 +21,7 @@ import { newErrorHandlingMutator } from './new-error-handling-mutator.js';
 import { newSubscribeCallMutator } from './new-subscribe-call-mutator.js';
 import { newRxjsOperatorMutator } from './new-rxjs-operator-mutator.js';
 import { newInputDefaultValueMutator } from './new-input-default-value-mutator.js';
+import { newInputNameMutator } from './new-input-name-mutator.js';
 
 export const allMutators: NodeMutator[] = [
   arithmeticOperatorMutator,
@@ -45,4 +46,5 @@ export const allMutators: NodeMutator[] = [
   newSubscribeCallMutator,
   newRxjsOperatorMutator,
   newInputDefaultValueMutator,
+  newInputNameMutator,
 ];
