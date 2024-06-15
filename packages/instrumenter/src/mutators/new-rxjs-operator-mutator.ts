@@ -74,7 +74,7 @@ export const newRxjsOperatorMutator: NodeMutator = {
             importDeclaration.specifiers.push(types.importSpecifier(types.identifier(newOperator), types.identifier(newOperator)));
             for (const operatorLocation of operatorLocations) {
               operatorLocation.replaceWith(types.identifier(newOperator));
-              yield path.node;
+              yield types.cloneNode(path.node);
               operatorLocation.replaceWith(types.identifier(oldOperator));
             }
             importDeclaration.specifiers.pop();
