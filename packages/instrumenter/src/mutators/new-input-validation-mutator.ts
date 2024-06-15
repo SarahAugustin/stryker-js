@@ -1,7 +1,11 @@
 import babel from '@babel/core';
 
 import { NodeMutator } from './node-mutator.js';
-import { isObjectRelatedToForms, isIthArgumentOfObjectRelatedToForms } from './../util/form-input-helper.js';
+import {
+  isObjectRelatedToForms,
+  isIthArgumentOfObjectRelatedToForms,
+  getArrayOfArgumentsOfObjectRelatedToForms,
+} from './../util/form-input-helper.js';
 
 const { types } = babel;
 
@@ -10,20 +14,16 @@ export const newInputValidationMutator: NodeMutator = {
 
   *mutate(path) {
     if (isObjectRelatedToForms(path)) {
-      const array = types.isArrayExpression(path.node) ? path.node.elements : path.node.arguments;
+      const array = getArrayOfArgumentsOfObjectRelatedToForms(path);
 
       // Delete the third argument if it exists and if it is not null, undefined, or an empty array
-      if (array.length === 3 && !isNullOrUndefinedOrEmptyArray(array[2])) {
-        const replacement = types.cloneNode(path.node);
-        types.isArrayExpression(replacement) ? replacement.elements.pop() : replacement.arguments.pop();
-        yield replacement;
+      if (array && array.length === 3 && types.isNode(array[2]) && !isNullOrUndefinedOrEmptyArray(array[2])) {
+        yield createReplacementWithLastArrayElementMissing(path.node);
       }
 
       // Delete the second argument if exactly two arguments exist in total and if it is not null, undefined, an empty array, or an object
-      if (array.length === 2 && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
-        const replacement = types.cloneNode(path.node);
-        types.isArrayExpression(replacement) ? replacement.elements.pop() : replacement.arguments.pop();
-        yield replacement;
+      if (array && array.length === 2 && types.isNode(array[1]) && !isNullOrUndefinedOrEmptyArray(array[1]) && !types.isObjectExpression(array[1])) {
+        yield createReplacementWithLastArrayElementMissing(path.node);
       }
     }
 
@@ -35,8 +35,8 @@ export const newInputValidationMutator: NodeMutator = {
       path.parentPath &&
       isObjectRelatedToForms(path.parentPath)
     ) {
-      const array = types.isArrayExpression(path.parentPath.node) ? path.parentPath.node.elements : path.parentPath.node.arguments;
-      if (array.length === 3) yield types.arrayExpression();
+      const array = getArrayOfArgumentsOfObjectRelatedToForms(path.parentPath);
+      if (array && array.length === 3) yield types.arrayExpression();
     }
 
     // If a second argument exists and it is an object, iterate over its properties and delete them if they are a validator or asyncValidator
@@ -52,6 +52,17 @@ export const newInputValidationMutator: NodeMutator = {
   },
 };
 
+// Create a replacement node where the last array element is missing
+function createReplacementWithLastArrayElementMissing(node: babel.types.Node): any {
+  const replacement = types.cloneNode(node);
+  if (types.isArrayExpression(replacement)) {
+    replacement.elements.pop();
+  } else if (types.isCallExpression(replacement) || types.isNewExpression(replacement)) {
+    replacement.arguments.pop();
+  }
+  return replacement;
+}
+
 // Check whether the property includes synchronous or asyncronous validators
 function isAValidatorOrAsyncValidator(
   property: babel.types.ObjectMethod | babel.types.ObjectProperty | babel.types.SpreadElement,
@@ -60,7 +71,7 @@ function isAValidatorOrAsyncValidator(
 }
 
 // Check whether the node corresponds to null, undefined, or an empty array
-function isNullOrUndefinedOrEmptyArray(node: babel.types.Node | null): boolean {
+function isNullOrUndefinedOrEmptyArray(node: babel.types.Node): boolean {
   return (
     types.isNullLiteral(node) ||
     (types.isIdentifier(node) && node.name === 'undefined') ||
