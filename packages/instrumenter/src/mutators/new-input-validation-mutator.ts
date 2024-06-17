@@ -1,11 +1,7 @@
 import babel from '@babel/core';
 
 import { NodeMutator } from './node-mutator.js';
-import {
-  isObjectRelatedToForms,
-  isIthArgumentOfObjectRelatedToForms,
-  getArrayOfArgumentsOfObjectRelatedToForms,
-} from './../util/form-input-helper.js';
+import { isIthArgumentOfObjectRelatedToForms, getArrayOfArgumentsOfObjectRelatedToForms } from './../util/form-input-helper.js';
 
 const { types } = babel;
 
