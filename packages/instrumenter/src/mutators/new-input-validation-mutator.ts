@@ -13,9 +13,8 @@ export const newInputValidationMutator: NodeMutator = {
   name: 'NewInputValidation',
 
   *mutate(path) {
-    if (isObjectRelatedToForms(path)) {
-      const array = getArrayOfArgumentsOfObjectRelatedToForms(path);
-
+    const array = getArrayOfArgumentsOfObjectRelatedToForms(path);
+    if (array) {
       // Delete the third argument if it exists and if it is not null, undefined, or an empty array
       if (array?.length === 3 && types.isNode(array[2]) && !isNullOrUndefinedOrEmptyArray(array[2])) {
         yield createReplacementWithLastArrayElementMissing(path.node);
@@ -28,15 +27,9 @@ export const newInputValidationMutator: NodeMutator = {
     }
 
     // Replace the second argument with an empty array if exactly three arguments exist in total and if the second one is not null, undefined, an empty array, or an object
-    if (
-      isIthArgumentOfObjectRelatedToForms(path, 1) &&
-      !path.isObjectExpression() &&
-      !isNullOrUndefinedOrEmptyArray(path.node) &&
-      path.parentPath &&
-      isObjectRelatedToForms(path.parentPath)
-    ) {
-      const array = getArrayOfArgumentsOfObjectRelatedToForms(path.parentPath);
-      if (array?.length === 3) yield types.arrayExpression();
+    if (isIthArgumentOfObjectRelatedToForms(path, 1) && !path.isObjectExpression() && !isNullOrUndefinedOrEmptyArray(path.node) && path.parentPath) {
+      const arrayOfArguments = getArrayOfArgumentsOfObjectRelatedToForms(path.parentPath);
+      if (arrayOfArguments?.length === 3) yield types.arrayExpression();
     }
 
     // If a second argument exists and it is an object, iterate over its properties and delete them if they are a validator or asyncValidator
