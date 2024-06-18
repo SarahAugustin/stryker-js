@@ -20,25 +20,27 @@ export const newInputNameMutator: NodeMutator = {
           }
         },
       });
-      // Traverse the AST a second time to find for all input names all occurrences
-      traverse(path.parentPath.node, {
-        Identifier(currentpath) {
-          if (types.isIdentifier(currentpath.node) && allInputNamesWithTheirLocations.has(currentpath.node.name)) {
-            const arrayOfLocations = allInputNamesWithTheirLocations.get(currentpath.node.name);
-            arrayOfLocations?.push(currentpath);
-            allInputNamesWithTheirLocations.set(currentpath.node.name, arrayOfLocations!);
+      if (allInputNamesWithTheirLocations.size > 0) {
+        // Traverse the AST a second time to find for all input names all occurrences
+        traverse(path.parentPath.node, {
+          Identifier(currentpath) {
+            if (types.isIdentifier(currentpath.node) && allInputNamesWithTheirLocations.has(currentpath.node.name)) {
+              const arrayOfLocations = allInputNamesWithTheirLocations.get(currentpath.node.name);
+              arrayOfLocations?.push(currentpath);
+              allInputNamesWithTheirLocations.set(currentpath.node.name, arrayOfLocations!);
+            }
+          },
+        });
+        const postfix = '_mutated';
+        // Iterate over all input names and append '_mutated' at their end
+        for (const [, inputNameLocations] of allInputNamesWithTheirLocations) {
+          for (const inputNameLocation of inputNameLocations) {
+            inputNameLocation.node.name = inputNameLocation.node.name.concat(postfix);
           }
-        },
-      });
-      const postfix = '_mutated';
-      // Iterate over all input names and append '_mutated' at their end
-      for (const [, inputNameLocations] of allInputNamesWithTheirLocations) {
-        for (const inputNameLocation of inputNameLocations) {
-          inputNameLocation.node.name = inputNameLocation.node.name.concat(postfix);
-        }
-        yield types.cloneNode(path.node);
-        for (const inputNameLocation of inputNameLocations) {
-          inputNameLocation.node.name = inputNameLocation.node.name.slice(0, -postfix.length);
+          yield types.cloneNode(path.node);
+          for (const inputNameLocation of inputNameLocations) {
+            inputNameLocation.node.name = inputNameLocation.node.name.slice(0, -postfix.length);
+          }
         }
       }
     }
