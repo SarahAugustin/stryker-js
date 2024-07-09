@@ -90,6 +90,7 @@ function isAFormControlDefinedByAFormBuilder(path: babel.NodePath): boolean {
   return (
     // FormControl defined by the group or record method
     (types.isObjectProperty(path.parentPath?.node) &&
+      path.parentPath?.node.value === path.node &&
       types.isObjectExpression(path.parentPath.parentPath?.node) &&
       isAFormBuilder(path.parentPath.parentPath.parentPath?.node, ['group', 'record']) &&
       path.parentPath.parentPath.parentPath.node.arguments[0] === path.parentPath.parentPath.node) ||
