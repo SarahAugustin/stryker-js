@@ -30,13 +30,7 @@ export class Mutant implements Mutable {
     this.replacement = specs.replacement;
     this.mutatorName = specs.mutatorName;
     this.ignoreReason = specs.ignoreReason;
-    const formatOptions =
-      fileName.endsWith('.ts') || fileName.endsWith('.tsx')
-        ? {
-            decoratorsBeforeExport: true,
-          }
-        : {};
-    this.replacementCode = generator(this.replacement, formatOptions).code;
+    this.replacementCode = generator(this.replacement).code;
   }
 
   public toApiMutant(): ApiMutant {
