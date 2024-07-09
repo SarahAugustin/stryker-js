@@ -342,19 +342,19 @@ function normalizeReportFileName(fileName: string | undefined) {
  * 2. Indentation: To fit the rest of the code, the current indentation of the replacement code lines had to be doubled and increased by the indentation of the line before the replacement.
  */
 function fixErrorAndIndentation(report: schema.MutationTestResult): void {
+  // Iterate over all files
   Object.values(report.files).forEach((file: any) => {
-    // Iterate over all files
     const fileAsArrayOfLines: string[] = file.source.split('\r\n');
+    // Iterate over all mutants
     file.mutants.forEach((mutant: any) => {
-      // Iterate over all mutants
       if (mutant.replacement.includes('\n')) {
         const startLine = mutant.location.start.line;
         const baseIndent = determineLeadingNumberOfWhitespaces(fileAsArrayOfLines[startLine - 1]);
         const replacementAsArrayOfLines: string[] = mutant.replacement.split('\n');
         // Avoid the runtime error by inserting two white spaces at the end of the first line
         replacementAsArrayOfLines[0] = replacementAsArrayOfLines[0] + '  ';
+        // Iterate over all lines of the replacement and insert the correct indentation
         for (let index = 1; index < replacementAsArrayOfLines.length; index++) {
-          // Iterate over all lines of the replacement and insert the correct indentation
           const extraIndent = determineLeadingNumberOfWhitespaces(replacementAsArrayOfLines[index]);
           replacementAsArrayOfLines[index] = '\n' + ' '.repeat(baseIndent + extraIndent) + replacementAsArrayOfLines[index];
         }
