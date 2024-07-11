@@ -13,7 +13,7 @@ export const newInputNameMutator: NodeMutator = {
     // Checks if the path points to a control's name and if so add the postfix '_mutated' to the name
     if (isNameOfControlSavedAsVariable(path) || isNameOfControlSavedAsObjectProperty(path)) {
       if (types.isIdentifier(path.node)) yield types.identifier(path.node.name.concat('_mutated'));
-      if (types.isNumericLiteral(path.node)) yield types.identifier(path.node.value.toString().concat('_mutated'));
+      if (types.isNumericLiteral(path.node)) yield types.numericLiteral(path.node.value + 1000);
     }
   },
 };
